@@ -1,0 +1,19 @@
+[project]
+name = "camera-lidar-fusion"
+version = "0.1.0"
+description = "Keeps a camera and a LiDAR aligned while the vehicle drives: an always-on drift monitor and a corrector for pitch and roll, run on a CPU."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Abdirazak Mubarak" }]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "opencv-python",
+    "onnxruntime",
+    "matplotlib",
+    "pillow",
+]
+
+[project.optional-dependencies]
+building = ["torch", "onnx", "remotezip"]
+test = ["pytest"]

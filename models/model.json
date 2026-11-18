@@ -1,0 +1,137 @@
+{
+  "name": "Camera-LiDAR Calibration Monitor and Corrector",
+  "input": "picture: frames x 2 x 128 x 416, normalised grey image and LiDAR inverse depth projected with the current calibration",
+  "monitor": {
+    "file": "monitor.onnx",
+    "size_kb": 119,
+    "parameters": 18523,
+    "output": "probability the calibration is drifting (rotation over 1 degree)"
+  },
+  "corrector": {
+    "file": "corrector.onnx",
+    "size_kb": 543,
+    "parameters": 119013,
+    "output": "rotation misalignment as a rotation vector in degrees (camera frame); pitch and roll are applied, yaw is not"
+  },
+  "data": "KITTI raw, 2011_09_26: 9 training drives, drive 0039 for validation, drive 0020 for testing",
+  "results": {
+    "monitor": {
+      "sizes_deg": [
+        0.5,
+        1.0,
+        1.5,
+        2.0,
+        3.0,
+        5.0
+      ],
+      "alarm_rate": {
+        "pitch": [
+          0.2,
+          0.95,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "yaw": [
+          0.225,
+          0.975,
+          1.0,
+          1.0,
+          0.95,
+          0.85
+        ],
+        "roll": [
+          0.225,
+          0.375,
+          0.575,
+          0.55,
+          0.925,
+          1.0
+        ]
+      },
+      "false_alarms": {
+        "windows": 0.0,
+        "frames": 0.077
+      }
+    },
+    "corrector": {
+      "passes": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "median_deg": [
+        2.2,
+        0.24,
+        0.2,
+        0.22
+      ],
+      "p90_deg": [
+        4.58,
+        0.49,
+        0.33,
+        0.31
+      ]
+    },
+    "system": {
+      "aligned": {
+        "status": {
+          "Aligned": 39,
+          "Corrected": 1,
+          "Recalibrate": 0
+        },
+        "tilt_median_deg": [
+          0.0,
+          0.0
+        ],
+        "left_worse_by_over_quarter_degree": 0
+      },
+      "pitch and roll, 2 to 5 degrees": {
+        "status": {
+          "Aligned": 0,
+          "Corrected": 39,
+          "Recalibrate": 1
+        },
+        "tilt_median_deg": [
+          3.97,
+          0.21
+        ],
+        "left_worse_by_over_quarter_degree": 0
+      },
+      "yaw, 2 to 5 degrees": {
+        "status": {
+          "Aligned": 4,
+          "Corrected": 3,
+          "Recalibrate": 33
+        },
+        "tilt_median_deg": [
+          0.0,
+          0.0
+        ],
+        "left_worse_by_over_quarter_degree": 1
+      }
+    },
+    "yaw": {
+      "training (0005)": {
+        "learned_slope": 0.0,
+        "learned_error_deg": 2.21,
+        "classical_error_deg": 0.33,
+        "classical_within_1deg": 0.83
+      },
+      "validation (0039)": {
+        "learned_slope": 0.03,
+        "learned_error_deg": 1.76,
+        "classical_error_deg": 11.45,
+        "classical_within_1deg": 0.1
+      },
+      "test (0020)": {
+        "learned_slope": 0.02,
+        "learned_error_deg": 1.99,
+        "classical_error_deg": 11.42,
+        "classical_within_1deg": 0.07
+      }
+    }
+  }
+}
