@@ -1,5 +1,5 @@
 {
-  "name": "Camera-LiDAR Calibration Monitor and Corrector",
+  "name": "Calibration Monitor\u2013Corrector Model",
   "input": "picture: frames x 2 x 128 x 416, normalised grey image and LiDAR inverse depth projected with the current calibration",
   "monitor": {
     "file": "monitor.onnx",

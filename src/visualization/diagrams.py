@@ -199,8 +199,9 @@ def onnx_mark() -> np.ndarray:
     return image
 
 
-def document(axis, x, y, label: str, mark: np.ndarray):
-    w, h, fold = 2.3, 3.07, 0.56
+def document(axis, x, y, mark: np.ndarray) -> float:
+    """One model file, drawn as in every other project: the page, the ONNX mark and its wordmark."""
+    w, h, fold = 2.55, 3.4, 0.62
     for spread, alpha in ((0.32, 0.04), (0.2, 0.06), (0.1, 0.09), (0.03, 0.14)):
         shadow = page(x - spread, y - spread - 0.12, w + 2 * spread, h + 2 * spread, fold + spread, 0.2 + spread)
         shadow.set(facecolor="black", edgecolor="none", alpha=alpha, zorder=2)
@@ -212,41 +213,70 @@ def document(axis, x, y, label: str, mark: np.ndarray):
     flap = PathPatch(Shape([(x + w - fold, y + h), (x + w - fold, y + h - fold + 0.1), (x + w - fold + 0.1, y + h - fold),
                             (x + w, y + h - fold), (x + w - fold, y + h)], closed=True))
     fill(axis, flap, ["#3E3E44", "#5A5A61"], angle=45, z=4)
-    size, cx = 1.15, x + w / 2
+    size, cx, label = 1.3, x + w / 2, 0.3
     aspect = mark.shape[0] / mark.shape[1]
-    top = y + h * 0.72
+    block = size * aspect + 0.36 + label
+    top = y + h * 0.47 + block / 2
     axis.imshow(mark, extent=(cx - size / 2, cx + size / 2, top - size * aspect, top), zorder=6, interpolation="lanczos")
-    axis.text(cx, y + 0.5, label, ha="center", va="center", fontsize=12, fontweight="medium", color=GREY_TEXT, zorder=6)
+    axis.text(cx, top - block + label / 2, "ONNX", ha="center", va="center", fontsize=15, fontweight="medium",
+              color="#8E8E93", alpha=0.85, zorder=6)
+    return cx
 
 
-GREY_TEXT = "#B4B4B9"
+def details(task: str) -> str:
+    entry = json.loads((MODELS / "model.json").read_text())[task]
+    return f"{entry['file']}  \u00b7  {entry['parameters'] / 1e3:.0f} thousand parameters  \u00b7  {entry['size_kb']} KB"
 
 
-def caption() -> str:
-    card = json.loads((MODELS / "model.json").read_text())
-    monitor, corrector = card["monitor"], card["corrector"]
-    return (f"monitor.onnx  ·  {monitor['parameters'] / 1e3:.0f} thousand parameters  ·  {monitor['size_kb']} KB"
-            f"          corrector.onnx  ·  {corrector['parameters'] / 1e3:.0f} thousand parameters  ·  "
-            f"{corrector['size_kb']} KB")
+def file_image(mark: np.ndarray) -> tuple[np.ndarray, tuple]:
+    """One model file drawn on its own, with its shadow, as an image to place and turn."""
+    import io
+
+    margin = 0.5
+    w, h = 2.55, 3.4
+    figure, axis = plt.subplots(figsize=((w + 2 * margin) / 1.45, (h + 2 * margin) / 1.45), dpi=400)
+    figure.subplots_adjust(0, 0, 1, 1)
+    axis.set_xlim(-margin, w + margin)
+    axis.set_ylim(-margin, h + margin)
+    axis.set_aspect("equal")
+    axis.axis("off")
+    document(axis, 0, 0, mark)
+    buffer = io.BytesIO()
+    figure.savefig(buffer, format="png", transparent=True)
+    plt.close(figure)
+    buffer.seek(0)
+    return np.asarray(Image.open(buffer).convert("RGBA")), (-margin, w + margin, -margin, h + margin)
+
+
+def fanned(axis, image: np.ndarray, extent: tuple, x: float, y: float, angle: float, pivot: tuple, z: int) -> None:
+    """Place a file with its lower-left corner at (x, y), turned about the pivot, like a card in a hand."""
+    from matplotlib.transforms import Affine2D
+
+    left, right, bottom, top = extent
+    shown = axis.imshow(image, extent=(x + left, x + right, y + bottom, y + top), zorder=z, interpolation="lanczos")
+    shown.set_transform(Affine2D().rotate_deg_around(*pivot, angle) + axis.transData)
 
 
 def model_files() -> None:
-    """The released system shown as what it is: two ONNX files."""
+    """The released model shown as what it is: one model in two ONNX files, fanned out."""
     style.apply()
-    width, height = 6 * CARD_W + 5 * GAP + 2 * MARGIN, 7.2
+    width, height = 6 * CARD_W + 5 * GAP + 2 * MARGIN, 7.6
     figure, axis = plt.subplots(figsize=(width / 1.45, height / 1.45))
     axis.set_xlim(0, width)
     axis.set_ylim(0, height)
     axis.set_aspect("equal")
     axis.axis("off")
     rounded(axis, 0, 0, width, height, FRAME, FRAME_RADIUS, z=1)
-    mark = onnx_mark()
-    document(axis, width / 2 - 2.3 - 0.45, 2.55, "Monitor", mark)
-    document(axis, width / 2 + 0.45, 2.55, "Corrector", mark)
-    axis.text(width / 2, 1.7, "Camera-LiDAR Calibration Models", ha="center", va="center", fontsize=14,
-              fontweight="semibold", color=style.NEUTRAL["ink"], zorder=6)
-    axis.text(width / 2, 1.25, caption(), ha="center", va="center", fontsize=9, color=style.NEUTRAL["secondary"],
-              zorder=6)
+    image, extent = file_image(onnx_mark())
+    w, y = 2.55, 2.95
+    pivot = (width / 2, y - 1.5)                                   # below the pages, like a hand of cards
+    fanned(axis, image, extent, width / 2 - w / 2 - 0.5, y, 8, pivot, z=5)    # monitor, behind and to the left
+    fanned(axis, image, extent, width / 2 - w / 2 + 0.5, y, -6, pivot, z=6)   # corrector, in front and to the right
+    axis.text(width / 2, 2.0, "Calibration Monitor\u2013Corrector Model", ha="center", va="center", fontsize=14,
+              fontweight="semibold", color=style.NEUTRAL["ink"], zorder=20)
+    for row, task in enumerate(("monitor", "corrector")):
+        axis.text(width / 2, 1.5 - row * 0.38, details(task), ha="center", va="center", fontsize=9,
+                  color=style.NEUTRAL["secondary"], zorder=20)
     style.save(figure, DOCS, "model", panel=False)
 
 

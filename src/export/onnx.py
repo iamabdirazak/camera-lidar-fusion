@@ -30,7 +30,7 @@ def card() -> None:
         files[task] = {"file": f"{task}.onnx", "size_kb": round((MODELS / f"{task}.onnx").stat().st_size / 1024),
                        "parameters": sum(p.numel() for p in model.parameters())}
     card = {
-        "name": "Camera-LiDAR Calibration Monitor and Corrector",
+        "name": "Calibration Monitor–Corrector Model",
         "input": f"picture: frames x 2 x {HEIGHT} x {WIDTH}, normalised grey image and LiDAR inverse depth "
                  "projected with the current calibration",
         "monitor": {**files["monitor"], "output": "probability the calibration is drifting (rotation over 1 degree)"},

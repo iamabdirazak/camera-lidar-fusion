@@ -1,6 +1,6 @@
 # Camera-LiDAR Fusion
 
-![Camera-LiDAR Calibration Models](docs/model.png)
+![Calibration Monitor–Corrector Model](docs/model.png)
 
 Camera-LiDAR Fusion keeps a camera and a LiDAR aligned while a vehicle drives. Fusion depends on knowing exactly how the two sensors sit relative to each other, and that calibration drifts with vibration, knocks and remounting. A drift of one degree slides LiDAR depth off the objects it belongs to, and fusion goes wrong without any error being raised. This system watches the alignment on every frame without targets or labels. It corrects drift in pitch and roll by itself, and when it finds drift it cannot correct reliably, yaw, it keeps the calibration it has and asks for a workshop recalibration. It runs on a CPU, about 10 ms per frame while all is well.
 
@@ -12,7 +12,7 @@ Camera-LiDAR Fusion keeps a camera and a LiDAR aligned while a vehicle drives. F
 
 **Matching.** Both models read the scene the same way. Image and depth are turned into features beside their edges and compared over a range of small offsets, which gives a match profile: where image and depth agree best, and how clearly. A correct calibration agrees best at no offset. Sideways and up-down offsets are measured separately, sideways from upright edges and up-down from level ones, and each part of the frame weighs its evidence by how much it trusts it.
 
-**Monitor.** A model of 19 thousand parameters runs on every frame and returns the probability that the calibration has drifted by more than one degree. Its votes are averaged over the last five frames, because drift is persistent and a single odd frame is not.
+**Monitor.** The first of the two files of the Calibration Monitor–Corrector Model, 19 thousand parameters, runs on every frame and returns the probability that the calibration has drifted by more than one degree. Its votes are averaged over the last five frames, because drift is persistent and a single odd frame is not.
 
 **Corrector.** When the monitor's average crosses one half, a model of 119 thousand parameters wakes. It estimates the rotation on each of the five frames and averages the estimates, then repeats from its own fix, three passes in all. Only pitch and roll are applied.
 
